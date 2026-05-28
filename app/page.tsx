@@ -23,6 +23,14 @@ export default async function HomePage() {
     <div className="min-h-screen bg-amber-50">
       {/* Hero Section với Tailwind CSS */}
       <header className="bg-orange-100 py-16 text-center border-b border-orange-200">
+        <div className="absolute top-4 right-4 sm:right-8">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-900 bg-orange-200/80 hover:bg-orange-300/90 rounded-xl border border-orange-300/50 shadow-sm transition-all duration-200"
+          >
+            🔒 Thành viên đăng nhập
+          </Link>
+        </div>
         <h1 className="text-4xl font-extrabold text-amber-900 tracking-tight sm:text-5xl">
           Học Làm Bánh Mỗi Ngày 🥐
         </h1>
