@@ -1,0 +1,81 @@
+import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
+
+// Khởi tạo Supabase client cho Server
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
+
+export default async function HomePage() {
+  // Data Fetching ngay trên Server Component theo yêu cầu đề bài
+  const { data: baiHocs, error } = await supabase.from("bai_hoc").select("*");
+
+  if (error)
+    return (
+      <div className="text-red-500 text-center py-10">
+        Lỗi tải dữ liệu bánh!
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-amber-50">
+      {/* Hero Section với Tailwind CSS */}
+      <header className="bg-orange-100 py-16 text-center border-b border-orange-200">
+        <h1 className="text-4xl font-extrabold text-amber-900 tracking-tight sm:text-5xl">
+          Học Làm Bánh Mỗi Ngày 🥐
+        </h1>
+        <p className="mt-4 text-lg text-amber-800 max-w-2xl mx-auto">
+          Khám phá các công thức làm bánh ngọt, bánh mì, bánh kem từ cơ bản đến
+          chuyên nghiệp.
+        </p>
+      </header>
+
+      {/* Danh sách bài học */}
+      <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-8">
+          Danh sách công thức hot
+        </h2>
+
+        <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+          {baiHocs?.map((baiHoc) => (
+            <div
+              key={baiHoc.id}
+              className="group relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
+            >
+              <div className="w-full h-48 bg-gray-200 aspect-w-1 aspect-h-1 group-hover:opacity-75">
+                <img
+                  src={
+                    baiHoc.hinh_anh ||
+                    "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"
+                  }
+                  alt={baiHoc.tieu_de}
+                  className="w-full h-full object-center object-cover"
+                />
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <Link href={`/bai-hoc/${baiHoc.id}`}>
+                    <span aria-hidden="true" className="absolute inset-0" />
+                    {baiHoc.tieu_de}
+                  </Link>
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                  {baiHoc.mo_ta}
+                </p>
+                <div className="mt-4 flex justify-between items-center">
+                  <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-orange-100 text-orange-800">
+                    Miễn phí
+                  </span>
+                  <span className="text-sm text-amber-600 font-medium">
+                    Xem công thức →
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
