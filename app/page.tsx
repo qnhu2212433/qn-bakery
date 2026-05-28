@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import { addCakeRecipe } from "./actions"; // Thêm dòng này để import Server Action
+import { addCakeRecipe, deleteCakeRecipe, updateCakeRecipe } from "./actions"; // Đã thêm hàm delete và update ở đây
 
 // Khởi tạo Supabase client cho Server
 const supabase = createClient(
@@ -22,7 +22,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-amber-50">
       {/* Hero Section với Tailwind CSS */}
-      <header className="bg-orange-100 py-16 text-center border-b border-orange-200">
+      <header className="bg-orange-100 py-16 text-center border-b border-orange-200 relative">
         <div className="absolute top-4 right-4 sm:right-8">
           <Link
             href="/login"
@@ -42,7 +42,7 @@ export default async function HomePage() {
 
       {/* Nội dung chính */}
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        {/* ==================== ĐÃ THÊM FORM SERVER ACTION Ở ĐÂY ==================== */}
+        {/* ==================== FORM SERVER ACTION THÊM BÁNH ==================== */}
         <div className="bg-white p-6 rounded-xl border border-orange-200 shadow-sm mb-12 max-w-3xl mx-auto">
           <h2 className="text-xl font-bold text-amber-950 mb-2 flex items-center gap-2">
             🍞 Đóng góp công thức bánh của bạn
@@ -104,7 +104,6 @@ export default async function HomePage() {
             </button>
           </form>
         </div>
-        {/* ========================================================================= */}
 
         {/* Danh sách bài học */}
         <h2 className="text-2xl font-bold text-gray-900 mb-8">
@@ -115,37 +114,99 @@ export default async function HomePage() {
           {baiHocs?.map((baiHoc) => (
             <div
               key={baiHoc.id}
-              className="group relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
+              className="group relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
             >
-              <div className="w-full h-48 bg-gray-200 aspect-w-1 aspect-h-1 group-hover:opacity-75">
-                <img
-                  src={
-                    baiHoc.hinh_anh ||
-                    "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"
-                  }
-                  alt={baiHoc.tieu_de}
-                  className="w-full h-full object-center object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <Link href={`/bai-hoc/${baiHoc.id}`}>
-                    <span aria-hidden="true" className="absolute inset-0" />
-                    {baiHoc.tieu_de}
-                  </Link>
-                </h3>
-                <p className="mt-2 text-sm text-gray-500 line-clamp-2">
-                  {baiHoc.mo_ta}
-                </p>
-                <div className="mt-4 flex justify-between items-center">
-                  <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-orange-100 text-orange-800">
-                    Miễn phí
-                  </span>
-                  <span className="text-sm text-amber-600 font-medium">
-                    Xem công thức →
-                  </span>
+              <div>
+                <div className="w-full h-48 bg-gray-200 aspect-w-1 aspect-h-1 group-hover:opacity-75 relative">
+                  <img
+                    src={
+                      baiHoc.hinh_anh ||
+                      "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"
+                    }
+                    alt={baiHoc.tieu_de}
+                    className="w-full h-full object-center object-cover"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 relative">
+                    <Link
+                      href={`/bai-hoc/${baiHoc.id}`}
+                      className="hover:text-amber-700 transition"
+                    >
+                      {baiHoc.tieu_de}
+                    </Link>
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                    {baiHoc.mo_ta}
+                  </p>
+                  <div className="mt-4 flex justify-between items-center">
+                    <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-orange-100 text-orange-800">
+                      Miễn phí
+                    </span>
+                    <Link
+                      href={`/bai-hoc/${baiHoc.id}`}
+                      className="text-sm text-amber-600 font-medium hover:underline"
+                    >
+                      Xem công thức →
+                    </Link>
+                  </div>
                 </div>
               </div>
+
+              {/* ==================== ĐÃ CHÈN KHỐI UPDATE & DELETE VÀO ĐÂY ==================== */}
+              <div className="p-6 pt-0 border-t border-orange-50 mt-auto bg-gray-50/50 rounded-b-xl space-y-2">
+                {/* Form Sửa nhanh tiêu đề bánh */}
+                <form
+                  action={async (formData) => {
+                    "use server";
+                    await updateCakeRecipe(formData);
+                  }}
+                  className="flex gap-1 items-center mt-3"
+                >
+                  <input type="hidden" name="id" value={baiHoc.id} />
+                  <input
+                    type="text"
+                    name="tieu_de"
+                    required
+                    placeholder="Sửa tên bánh..."
+                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-orange-400 flex-1 bg-white"
+                  />
+                  <button
+                    type="submit"
+                    className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded transition"
+                  >
+                    Sửa
+                  </button>
+                </form>
+
+                {/* Form Xóa món bánh (Đã sửa lỗi Runtime confirm) */}
+                <form
+                  action={async (formData) => {
+                    "use server";
+                    await deleteCakeRecipe(formData);
+                  }}
+                  // Đưa việc xác nhận confirm ra onSubmit của HTML Form chạy dưới Client
+                  onSubmit={(e) => {
+                    if (
+                      !window.confirm(
+                        "Bạn có chắc chắn muốn xóa công thức bánh này không?",
+                      )
+                    ) {
+                      e.preventDefault(); // Hủy việc gửi form lên Server nếu chọn Cancel
+                    }
+                  }}
+                  className="w-full text-right"
+                >
+                  <input type="hidden" name="id" value={baiHoc.id} />
+                  <button
+                    type="submit"
+                    className="w-full text-center text-xs bg-red-50 text-red-600 border border-red-100 py-1 rounded hover:bg-red-100/70 transition font-medium"
+                  >
+                    🗑️ Xóa công thức
+                  </button>
+                </form>
+              </div>
+              {/* ========================================================================= */}
             </div>
           ))}
         </div>

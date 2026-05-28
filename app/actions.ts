@@ -40,3 +40,39 @@ export async function addCakeRecipe(formData: FormData) {
   revalidatePath("/");
   return { success: true };
 }
+export async function deleteCakeRecipe(formData: FormData) {
+  "use server";
+  const id = formData.get("id") as string;
+
+  if (!id) return;
+
+  const { error } = await supabase.from("bai_hoc").delete().eq("id", id);
+
+  if (error) {
+    console.error("Lỗi xóa bánh:", error.message);
+    return;
+  }
+
+  revalidatePath("/");
+}
+
+// Hàm CẬP NHẬT công thức bánh (Sửa nhanh tiêu đề)
+export async function updateCakeRecipe(formData: FormData) {
+  "use server";
+  const id = formData.get("id") as string;
+  const tieu_de = formData.get("tieu_de") as string;
+
+  if (!id || !tieu_de) return;
+
+  const { error } = await supabase
+    .from("bai_hoc")
+    .update({ tieu_de })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Lỗi cập nhật bánh:", error.message);
+    return;
+  }
+
+  revalidatePath("/");
+}
