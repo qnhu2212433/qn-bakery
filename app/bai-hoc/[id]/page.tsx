@@ -1,20 +1,41 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import CommentSection from "@/app/components/CommentSection"; // Chúng ta sẽ tạo component này ở dưới
+import CommentSection from "@/app/components/CommentSection";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
+// 1. Sửa kiểu dữ liệu Params thành Promise theo đúng chuẩn Next.js khắt khe
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function BaiHocDetailPage({ params }: Props) {
-  const { id } = params;
+  // 2. Phải dùng await để giải nén id từ params
+  const { id } = await params;
 
-  // Lấy chi tiết bài học
+  // 3. Khởi tạo Supabase Client SSR đồng bộ Cookie hoàn chỉnh để phục vụ build Production
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Chạy ngầm phía Server có thể bỏ qua bước set cookie
+          }
+        },
+      },
+    },
+  );
+
+  // 4. Lấy chi tiết bài học từ Database
   const { data: baiHoc } = await supabase
     .from("bai_hoc")
     .select("*")
