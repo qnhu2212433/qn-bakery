@@ -1,64 +1,65 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-// Khởi tạo Supabase Client phía Server
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
-// Interface định nghĩa dữ liệu bài học bánh mới theo chuẩn TypeScript
-interface BaiHocInput {
-  tieu_de: string;
-  mo_ta: string;
-  noi_dung: string;
+// Khởi tạo Supabase Client đồng bộ Cookie chuẩn SSR
+async function getSupabaseClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {}
+        },
+      },
+    },
+  );
 }
 
 export async function addCakeRecipe(formData: FormData) {
-  // Lấy dữ liệu từ các ô nhập liệu trong Form
+  const supabase = await getSupabaseClient();
   const tieu_de = formData.get("tieu_de") as string;
   const mo_ta = formData.get("mo_ta") as string;
   const noi_dung = formData.get("noi_dung") as string;
 
-  // Kiểm tra hợp lệ dữ liệu cơ bản
   if (!tieu_de || !noi_dung) {
     return { error: "Vui lòng điền tiêu đề và hướng dẫn chi tiết món bánh!" };
   }
 
-  // Thực hiện thêm mới món bánh vào bảng 'bai_hoc' trên Supabase Database
   const { error } = await supabase
     .from("bai_hoc")
     .insert([{ tieu_de, mo_ta, noi_dung }]);
 
-  if (error) {
-    return { error: `Lỗi Database: ${error.message}` };
-  }
+  if (error) return { error: `Lỗi Database: ${error.message}` };
 
-  // Làm mới luồng dữ liệu trang chủ (bảng hiển thị danh sách bánh) ngay lập tức
   revalidatePath("/");
   return { success: true };
 }
-export async function deleteCakeRecipe(formData: FormData) {
-  "use server";
-  const id = formData.get("id") as string;
 
+export async function deleteCakeRecipe(formData: FormData) {
+  const supabase = await getSupabaseClient();
+  const id = formData.get("id") as string;
   if (!id) return;
 
   const { error } = await supabase.from("bai_hoc").delete().eq("id", id);
-
-  if (error) {
-    console.error("Lỗi xóa bánh:", error.message);
-    return;
-  }
+  if (error) console.error("Lỗi xóa bánh:", error.message);
 
   revalidatePath("/");
 }
 
-// Hàm CẬP NHẬT công thức bánh (Sửa nhanh tiêu đề)
 export async function updateCakeRecipe(formData: FormData) {
-  "use server";
+  const supabase = await getSupabaseClient();
   const id = formData.get("id") as string;
   const tieu_de = formData.get("tieu_de") as string;
 
@@ -69,10 +70,7 @@ export async function updateCakeRecipe(formData: FormData) {
     .update({ tieu_de })
     .eq("id", id);
 
-  if (error) {
-    console.error("Lỗi cập nhật bánh:", error.message);
-    return;
-  }
+  if (error) console.error("Lỗi cập nhật bánh:", error.message);
 
   revalidatePath("/");
 }
