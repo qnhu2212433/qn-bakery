@@ -180,22 +180,6 @@ export default async function HomePage() {
           </div>
         ) : null}
 
-        {/* Thông báo đăng nhập nếu chưa có phiên */}
-        {!isLoggedIn ? (
-          <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-xl max-w-2xl mx-auto mb-16 text-center shadow-sm">
-            <p className="text-amber-900 text-xs font-medium">
-              💡 Vui lòng{" "}
-              <Link
-                href="/login"
-                className="text-zinc-900 underline font-bold hover:text-amber-900"
-              >
-                Đăng nhập tài khoản
-              </Link>{" "}
-              để đóng góp công thức hoặc chỉnh sửa dữ liệu bánh.
-            </p>
-          </div>
-        ) : null}
-
         {/* Khu vực danh sách sản phẩm */}
         <div className="border-b border-zinc-200 pb-3 mb-8 flex justify-between items-end">
           <h2 className="text-xl font-extrabold text-zinc-900 tracking-tight uppercase">
