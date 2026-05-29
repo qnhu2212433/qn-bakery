@@ -3,6 +3,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 // 1. Khởi tạo Supabase Client đồng bộ Cookie chuẩn SSR
 async function getSupabaseClient() {
@@ -157,18 +158,27 @@ export async function updateCakeRecipe(formData: FormData) {
 
   revalidatePath("/");
 }
-// 6. HÀM ĐĂNG XUẤT TÀI KHOẢN
+// 6. HÀM ĐĂNG XUẤT TÀI KHOẢN (BẢN SỬA LỖI COOKIE & CACHE TRIỆT ĐỂ)
 export async function signOut() {
   const supabase = await getSupabaseClient();
 
-  // Gọi lệnh đăng xuất của Supabase để xóa session/cookie hiện tại
-  const { error } = await supabase.auth.signOut();
+  // 1. Gọi lệnh đăng xuất phía Supabase server để hủy session
+  await supabase.auth.signOut();
 
-  if (error) {
-    console.error("Lỗi khi đăng xuất Auth:", error.message);
-    return;
-  }
+  // 2. Ép xóa thủ công toàn bộ Cookie liên quan đến phiên đăng nhập Supabase nhằm vượt qua lỗi catch ngầm
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
 
-  // Làm mới lại toàn bộ trang để giao diện cập nhật về trạng thái "Chưa đăng nhập"
+  // Tìm và xóa sạch mọi cookie có tên chứa chuỗi 'supabase-auth' hoặc 'sb-'
+  allCookies.forEach((cookie) => {
+    if (cookie.name.includes("supabase") || cookie.name.startsWith("sb-")) {
+      cookieStore.delete(cookie.name);
+    }
+  });
+
+  // 3. Xóa cache dữ liệu trang chủ Next.js
   revalidatePath("/");
+
+  // 4. Bắt buộc chuyển hướng điều hướng về trang chủ để cập nhật lại toàn bộ giao diện trạng thái mới
+  redirect("/");
 }
