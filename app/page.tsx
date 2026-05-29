@@ -178,7 +178,8 @@ export default async function HomePage() {
               </div>
             </form>
           </div>
-        ) : (
+        {/* FORM ĐÓNG GÓP CÔNG THỨC */}
+          {isLoggedIn ? (
           <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-xl max-w-2xl mx-auto mb-16 text-center shadow-sm">
             <p className="text-amber-900 text-xs font-medium">
               💡 Vui lòng{" "}
@@ -191,7 +192,7 @@ export default async function HomePage() {
               để đóng góp công thức hoặc chỉnh sửa dữ liệu bánh.
             </p>
           </div>
-        )}
+        ): null}
 
         {/* Khu vực danh sách sản phẩm */}
         <div className="border-b border-zinc-200 pb-3 mb-8 flex justify-between items-end">
