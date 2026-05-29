@@ -109,9 +109,11 @@ export default async function HomePage() {
             <p className="text-xs text-zinc-400 mb-6">
               Hệ thống sử dụng Server Actions cập nhật dữ liệu thời gian thực.
             </p>
-
             <form
-              action={addCakeRecipe}
+              action={async (data) => {
+                "use server";
+                await addCakeRecipe(data);
+              }}
               encType="multipart/form-data"
               className="space-y-5"
             >

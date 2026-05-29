@@ -27,6 +27,7 @@ async function getSupabaseClient() {
   );
 }
 
+// Sửa hàm này trả về void (không return object) để khớp kiểu dữ liệu HTML Form
 export async function addCakeRecipe(formData: FormData) {
   const supabase = await getSupabaseClient();
   const tieu_de = formData.get("tieu_de") as string;
@@ -34,17 +35,20 @@ export async function addCakeRecipe(formData: FormData) {
   const noi_dung = formData.get("noi_dung") as string;
 
   if (!tieu_de || !noi_dung) {
-    return { error: "Vui lòng điền tiêu đề và hướng dẫn chi tiết món bánh!" };
+    console.error("Vui lòng điền tiêu đề và hướng dẫn chi tiết món bánh!");
+    return; // Trả về void
   }
 
   const { error } = await supabase
     .from("bai_hoc")
     .insert([{ tieu_de, mo_ta, noi_dung }]);
 
-  if (error) return { error: `Lỗi Database: ${error.message}` };
+  if (error) {
+    console.error(`Lỗi Database: ${error.message}`);
+    return; // Trả về void
+  }
 
   revalidatePath("/");
-  return { success: true };
 }
 
 export async function deleteCakeRecipe(formData: FormData) {
