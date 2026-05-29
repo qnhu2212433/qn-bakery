@@ -1,151 +1,245 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import Link from "next/link";
-import { addCakeRecipe, deleteCakeRecipe, updateCakeRecipe } from "./actions"; // Đã thêm hàm delete và update ở đây
-
-// Khởi tạo Supabase client cho Server
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import { addCakeRecipe, deleteCakeRecipe, updateCakeRecipe } from "./actions";
 
 export default async function HomePage() {
-  // Data Fetching ngay trên Server Component theo yêu cầu đề bài
+  // 1. Khởi tạo Supabase Server Client tương thích 100% với Vercel Production
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Bỏ qua trên môi trường Server Component
+          }
+        },
+      },
+    },
+  );
+
+  // 2. Kiểm tra trạng thái phiên đăng nhập của người dùng
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const isLoggedIn = !!session;
+
+  // 3. Fetch danh sách dữ liệu công thức bánh thời gian thực
   const { data: baiHocs, error } = await supabase.from("bai_hoc").select("*");
 
   if (error)
     return (
-      <div className="text-red-500 text-center py-10">
-        Lỗi tải dữ liệu bánh!
+      <div className="text-zinc-500 text-center py-20 font-medium">
+        Lỗi kết nối hệ thống, vui lòng thử lại sau.
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-amber-50">
-      {/* Hero Section với Tailwind CSS */}
-      <header className="bg-orange-100 py-16 text-center border-b border-orange-200 relative">
-        <div className="absolute top-4 right-4 sm:right-8">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-900 bg-orange-200/80 hover:bg-orange-300/90 rounded-xl border border-orange-300/50 shadow-sm transition-all duration-200"
-          >
-            🔒 Thành viên đăng nhập
-          </Link>
+    <div className="min-h-screen bg-[#f8f9fa] text-zinc-800 font-sans antialiased">
+      {/* Header trắng tinh tế kết hợp tên thương hiệu BakeryLab */}
+      <header className="bg-white border-b border-zinc-100 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-black tracking-tight text-zinc-900 uppercase">
+              Bakery<span className="text-amber-500 font-light">Lab.</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {isLoggedIn ? (
+              <form
+                action="/api/auth/signout"
+                method="POST"
+                className="flex items-center gap-3"
+              >
+                <span className="hidden sm:inline text-xs text-zinc-500">
+                  Chào, {session.user.email?.split("@")[0]}
+                </span>
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                >
+                  Đăng xuất
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition"
+              >
+                🔒 Thành viên đăng nhập
+              </Link>
+            )}
+          </div>
         </div>
-        <h1 className="text-4xl font-extrabold text-amber-900 tracking-tight sm:text-5xl">
-          Học Làm Bánh Mỗi Ngày 🥐
-        </h1>
-        <p className="mt-4 text-lg text-amber-800 max-w-2xl mx-auto">
-          Khám phá các công thức làm bánh ngọt, bánh mì, bánh kem từ cơ bản đến
-          chuyên nghiệp.
-        </p>
       </header>
+
+      {/* Hero Banner khối màu tối sâu lắng */}
+      <section className="bg-[#0f172a] text-white py-16 px-4 text-center relative overflow-hidden shadow-inner">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div className="max-w-3xl mx-auto relative z-10">
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl uppercase">
+            Khoá Học Làm Bánh Chuẩn Vị
+          </h1>
+          <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed normal-case">
+            Bí kíp làm bánh nở cao, mặt mịn bóng, ruột tơi xốp tan ngay trong
+            miệng. Khám phá ngay các công thức chuẩn vị được chia sẻ từ tiệm
+            bánh BakeryLab.
+          </p>
+        </div>
+      </section>
 
       {/* Nội dung chính */}
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        {/* ==================== FORM SERVER ACTION THÊM BÁNH ==================== */}
-        <div className="bg-white p-6 rounded-xl border border-orange-200 shadow-sm mb-12 max-w-3xl mx-auto">
-          <h2 className="text-xl font-bold text-amber-950 mb-2 flex items-center gap-2">
-            🍞 Đóng góp công thức bánh của bạn
-          </h2>
-          <p className="text-xs text-gray-500 mb-4">
-            (Tính năng sử dụng Next.js Server Actions - Thêm dữ liệu không
-            reload trang)
-          </p>
-          <form
-            action={async (formData) => {
-              "use server";
-              await addCakeRecipe(formData);
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Tên món bánh *
-              </label>
-              <input
-                name="tieu_de"
-                type="text"
-                required
-                placeholder="Ví dụ: Bánh Mousse Dâu Tây Pháp"
-                className="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-            </div>
+        {/* FORM ĐÓNG GÓP CÔNG THỨC */}
+        {isLoggedIn ? (
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-zinc-200/80 shadow-sm mb-16 max-w-3xl mx-auto">
+            <h2 className="text-lg font-bold text-zinc-900 mb-1 flex items-center gap-2">
+              ✨ Đóng góp công thức bánh của bạn
+            </h2>
+            <p className="text-xs text-zinc-400 mb-6">
+              Hệ thống sử dụng Server Actions cập nhật dữ liệu thời gian thực.
+            </p>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Mô tả ngắn
-              </label>
-              <input
-                name="mo_ta"
-                type="text"
-                placeholder="Ví dụ: Vị chua nhẹ của dâu kết hợp với kem béo ngậy..."
-                className="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Hướng dẫn / Công thức chi tiết *
-              </label>
-              <textarea
-                name="noi_dung"
-                rows={4}
-                required
-                placeholder="Bước 1: Làm đế bánh bánh quy... Bước 2: Đánh bông kem tươi..."
-                className="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full sm:w-auto px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white text-sm font-medium rounded-lg transition shadow-sm"
+            <form
+              action={addCakeRecipe}
+              encType="multipart/form-data"
+              className="space-y-5"
             >
-              Chia sẻ lên hệ thống
-            </button>
-          </form>
-        </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-600 mb-1.5">
+                    Tên món bánh *
+                  </label>
+                  <input
+                    name="tieu_de"
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Bánh Kem Castella Đài Loan"
+                    className="w-full p-2.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                  />
+                </div>
 
-        {/* Danh sách bài học */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-8">
-          Danh sách công thức hot
-        </h2>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-600 mb-1.5">
+                    Mô tả hương vị
+                  </label>
+                  <input
+                    name="mo_ta"
+                    type="text"
+                    placeholder="Ví dụ: Thơm ngon đậm đà, không nồng mùi trứng..."
+                    className="w-full p-2.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-600 mb-1.5">
+                  Hình ảnh thực tế món bánh
+                </label>
+                <input
+                  name="hinh_anh_file"
+                  type="file"
+                  accept="image/*"
+                  className="w-full p-2 text-xs bg-zinc-50/50 border border-zinc-200 rounded-xl cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-zinc-900 file:text-white hover:file:bg-zinc-800 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-600 mb-1.5">
+                  Công thức & Quy trình chi tiết *
+                </label>
+                <textarea
+                  name="noi_dung"
+                  rows={4}
+                  required
+                  placeholder="Bước 1: Đánh lòng trắng trứng... Bước 2: Nướng cách thủy ở 150°C..."
+                  className="w-full p-2.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                />
+              </div>
+
+              <div className="text-right">
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-sm"
+                >
+                  Đăng công thức
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-xl max-w-2xl mx-auto mb-16 text-center shadow-sm">
+            <p className="text-amber-900 text-xs font-medium">
+              💡 Vui lòng{" "}
+              <Link
+                href="/login"
+                className="text-zinc-900 underline font-bold hover:text-amber-900"
+              >
+                Đăng nhập tài khoản
+              </Link>{" "}
+              để đóng góp công thức hoặc chỉnh sửa dữ liệu bánh.
+            </p>
+          </div>
+        )}
+
+        {/* Khu vực danh sách sản phẩm */}
+        <div className="border-b border-zinc-200 pb-3 mb-8 flex justify-between items-end">
+          <h2 className="text-xl font-extrabold text-zinc-900 tracking-tight uppercase">
+            Khoá học{" "}
+            <span className="text-amber-500 normal-case font-bold">
+              nổi bật
+            </span>
+          </h2>
+        </div>
 
         <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
           {baiHocs?.map((baiHoc) => (
             <div
               key={baiHoc.id}
-              className="group relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
+              className="group bg-white border border-zinc-200/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
             >
               <div>
-                <div className="w-full h-48 bg-gray-200 aspect-w-1 aspect-h-1 group-hover:opacity-75 relative">
+                <div className="w-full h-52 bg-zinc-100 relative overflow-hidden">
                   <img
                     src={
                       baiHoc.hinh_anh ||
                       "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"
                     }
                     alt={baiHoc.tieu_de}
-                    className="w-full h-full object-center object-cover"
+                    className="w-full h-full object-center object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 relative">
+
+                <div className="p-5">
+                  <h3 className="text-base font-bold text-zinc-900 tracking-tight capitalize">
                     <Link
                       href={`/bai-hoc/${baiHoc.id}`}
-                      className="hover:text-amber-700 transition"
+                      className="hover:text-amber-500 transition-colors"
                     >
                       {baiHoc.tieu_de}
                     </Link>
                   </h3>
-                  <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                  <p className="mt-1.5 text-xs text-zinc-500 line-clamp-2 leading-relaxed">
                     {baiHoc.mo_ta}
                   </p>
-                  <div className="mt-4 flex justify-between items-center">
-                    <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-orange-100 text-orange-800">
-                      Miễn phí
+
+                  <div className="mt-4 pt-3 border-t border-zinc-100 flex justify-between items-center">
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600">
+                      Mix Vị Cao Cấp
                     </span>
                     <Link
                       href={`/bai-hoc/${baiHoc.id}`}
-                      className="text-sm text-amber-600 font-medium hover:underline"
+                      className="text-xs text-zinc-900 font-bold hover:text-amber-500 transition-colors"
                     >
                       Xem công thức →
                     </Link>
@@ -153,60 +247,40 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* ==================== ĐÃ CHÈN KHỐI UPDATE & DELETE VÀO ĐÂY ==================== */}
-              <div className="p-6 pt-0 border-t border-orange-50 mt-auto bg-gray-50/50 rounded-b-xl space-y-2">
-                {/* Form Sửa nhanh tiêu đề bánh */}
-                <form
-                  action={async (formData) => {
-                    "use server";
-                    await updateCakeRecipe(formData);
-                  }}
-                  className="flex gap-1 items-center mt-3"
-                >
-                  <input type="hidden" name="id" value={baiHoc.id} />
-                  <input
-                    type="text"
-                    name="tieu_de"
-                    required
-                    placeholder="Sửa tên bánh..."
-                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-orange-400 flex-1 bg-white"
-                  />
-                  <button
-                    type="submit"
-                    className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded transition"
+              {/* KHỐI SỬA / XÓA CHO THÀNH VIÊN */}
+              {isLoggedIn && (
+                <div className="p-5 pt-0 mt-auto bg-zinc-50/50 border-t border-zinc-100 space-y-2">
+                  <form
+                    action={updateCakeRecipe}
+                    className="flex gap-2 items-center mt-3"
                   >
-                    Sửa
-                  </button>
-                </form>
+                    <input type="hidden" name="id" value={baiHoc.id} />
+                    <input
+                      type="text"
+                      name="tieu_de"
+                      required
+                      placeholder="Đổi tên..."
+                      className="px-3 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg text-zinc-900 focus:outline-none focus:border-zinc-400 flex-1 placeholder-zinc-400"
+                    />
+                    <button
+                      type="submit"
+                      className="text-xs bg-zinc-800 hover:bg-zinc-900 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                    >
+                      Sửa
+                    </button>
+                  </form>
 
-                {/* Form Xóa món bánh (Đã sửa lỗi Runtime confirm) */}
-                <form
-                  action={async (formData) => {
-                    "use server";
-                    await deleteCakeRecipe(formData);
-                  }}
-                  // Đưa việc xác nhận confirm ra onSubmit của HTML Form chạy dưới Client
-                  onSubmit={(e) => {
-                    if (
-                      !window.confirm(
-                        "Bạn có chắc chắn muốn xóa công thức bánh này không?",
-                      )
-                    ) {
-                      e.preventDefault(); // Hủy việc gửi form lên Server nếu chọn Cancel
-                    }
-                  }}
-                  className="w-full text-right"
-                >
-                  <input type="hidden" name="id" value={baiHoc.id} />
-                  <button
-                    type="submit"
-                    className="w-full text-center text-xs bg-red-50 text-red-600 border border-red-100 py-1 rounded hover:bg-red-100/70 transition font-medium"
-                  >
-                    🗑️ Xóa công thức
-                  </button>
-                </form>
-              </div>
-              {/* ========================================================================= */}
+                  <form action={deleteCakeRecipe} className="w-full text-right">
+                    <input type="hidden" name="id" value={baiHoc.id} />
+                    <button
+                      type="submit"
+                      className="w-full text-center text-xs text-red-500 bg-white border border-red-100 hover:bg-red-50 py-2 rounded-lg font-semibold transition"
+                    >
+                      Xóa khỏi danh sách
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
         </div>
