@@ -74,12 +74,24 @@ export default async function HomePage() {
                 </button>
               </form>
             ) : (
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition"
-              >
-                🔒 Thành viên đăng nhập
-              </Link>
+              /* Khối bao bọc linh hoạt giúp 2 nút nằm ngang hàng và cách nhau một khoảng vừa phải */
+              <div className="flex items-center gap-2">
+                {/* Nút Đăng nhập */}
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition"
+                >
+                  Đăng nhập
+                </Link>
+
+                {/* Nút Đăng ký (Nổi bật hơn với nền tối để người dùng dễ chú ý) */}
+                <Link
+                  href="/register"
+                  className="px-4 py-2 text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg transition"
+                >
+                  Đăng ký
+                </Link>
+              </div>
             )}
           </div>
         </div>
