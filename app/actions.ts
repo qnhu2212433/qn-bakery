@@ -157,3 +157,18 @@ export async function updateCakeRecipe(formData: FormData) {
 
   revalidatePath("/");
 }
+// 6. HÀM ĐĂNG XUẤT TÀI KHOẢN
+export async function signOut() {
+  const supabase = await getSupabaseClient();
+
+  // Gọi lệnh đăng xuất của Supabase để xóa session/cookie hiện tại
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.error("Lỗi khi đăng xuất Auth:", error.message);
+    return;
+  }
+
+  // Làm mới lại toàn bộ trang để giao diện cập nhật về trạng thái "Chưa đăng nhập"
+  revalidatePath("/");
+}

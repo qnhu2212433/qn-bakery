@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { addCakeRecipe, deleteCakeRecipe, updateCakeRecipe } from "./actions";
+import {
+  addCakeRecipe,
+  deleteCakeRecipe,
+  updateCakeRecipe,
+  signOut,
+} from "./actions";
 
 export default async function HomePage() {
   // 1. Khởi tạo Supabase Server Client tương thích 100% với Vercel Production
@@ -56,17 +61,14 @@ export default async function HomePage() {
 
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
-              <form
-                action="/api/auth/signout"
-                method="POST"
-                className="flex items-center gap-3"
-              >
+              /* 🔥 ĐÃ SỬA: Thay thế action API cũ bằng hàm Server Action signOut nhận trực tiếp từ file ./actions */
+              <form action={signOut} className="flex items-center gap-3">
                 <span className="hidden sm:inline text-xs text-zinc-500">
                   Chào, {session.user.email?.split("@")[0]}
                 </span>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                  className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition cursor-pointer"
                 >
                   Đăng xuất
                 </button>
@@ -109,7 +111,6 @@ export default async function HomePage() {
             <p className="text-xs text-zinc-400 mb-6">
               Hệ thống sử dụng Server Actions cập nhật dữ liệu thời gian thực.
             </p>
-            {/* Gọi trực tiếp hành động addCakeRecipe sạch sẽ */}
             <form
               action={addCakeRecipe}
               encType="multipart/form-data"
@@ -146,7 +147,6 @@ export default async function HomePage() {
                 <label className="block text-xs font-bold text-zinc-600 mb-1.5">
                   Hình ảnh thực tế món bánh
                 </label>
-                {/* 🛠️ ĐỔI TÊN name TỪ hinh_anh_file THÀNH hinh_anh ĐỂ ĐỒNG BỘ VỚI FILE ACTIONS */}
                 <input
                   name="hinh_anh"
                   type="file"
@@ -265,7 +265,7 @@ export default async function HomePage() {
                     />
                     <button
                       type="submit"
-                      className="text-xs bg-zinc-800 hover:bg-zinc-900 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                      className="text-xs bg-zinc-800 hover:bg-zinc-900 text-white px-3 py-1.5 rounded-lg font-medium transition cursor-pointer"
                     >
                       Sửa
                     </button>
@@ -275,7 +275,7 @@ export default async function HomePage() {
                     <input type="hidden" name="id" value={baiHoc.id} />
                     <button
                       type="submit"
-                      className="w-full text-center text-xs text-red-500 bg-white border border-red-100 hover:bg-red-50 py-2 rounded-lg font-semibold transition"
+                      className="w-full text-center text-xs text-red-500 bg-white border border-red-100 hover:bg-red-50 py-2 rounded-lg font-semibold transition cursor-pointer"
                     >
                       Xóa khỏi danh sách
                     </button>
