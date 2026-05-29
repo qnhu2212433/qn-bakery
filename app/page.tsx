@@ -109,11 +109,9 @@ export default async function HomePage() {
             <p className="text-xs text-zinc-400 mb-6">
               Hệ thống sử dụng Server Actions cập nhật dữ liệu thời gian thực.
             </p>
+            {/* Gọi trực tiếp hành động addCakeRecipe sạch sẽ */}
             <form
-              action={async (data) => {
-                "use server";
-                await addCakeRecipe(data);
-              }}
+              action={addCakeRecipe}
               encType="multipart/form-data"
               className="space-y-5"
             >
@@ -148,8 +146,9 @@ export default async function HomePage() {
                 <label className="block text-xs font-bold text-zinc-600 mb-1.5">
                   Hình ảnh thực tế món bánh
                 </label>
+                {/* 🛠️ ĐỔI TÊN name TỪ hinh_anh_file THÀNH hinh_anh ĐỂ ĐỒNG BỘ VỚI FILE ACTIONS */}
                 <input
-                  name="hinh_anh_file"
+                  name="hinh_anh"
                   type="file"
                   accept="image/*"
                   className="w-full p-2 text-xs bg-zinc-50/50 border border-zinc-200 rounded-xl cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-zinc-900 file:text-white hover:file:bg-zinc-800 transition"

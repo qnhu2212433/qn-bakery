@@ -36,16 +36,57 @@ export async function addCakeRecipe(formData: FormData) {
 
   if (!tieu_de || !noi_dung) {
     console.error("Vui lòng điền tiêu đề và hướng dẫn chi tiết món bánh!");
-    return; // Trả về void
+    return;
   }
 
-  const { error } = await supabase
-    .from("bai_hoc")
-    .insert([{ tieu_de, mo_ta, noi_dung }]);
+  // --- 📸 ĐOẠN XỬ LÝ UPLOAD ẢNH THẬT LÊN BUCKET BAKERY-IMAGES ---
+  const fileAnh = formData.get("hinh_anh"); // Lấy file từ ô input name="hinh_anh"
+
+  // Link ảnh mặc định phòng khi người dùng không chọn ảnh
+  let link_hinh_anh =
+    "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800";
+
+  if (fileAnh && fileAnh instanceof File && fileAnh.size > 0) {
+    try {
+      // Đổi tên file sang tiếng Việt không dấu hoặc dùng timestamp để không lỗi URL
+      const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // 1. Đẩy file ảnh xịn lên bucket "bakery-images"
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from("bakery-images")
+        .upload(uniqueFileName, fileAnh, {
+          contentType: fileAnh.type, // Đảm bảo đúng định dạng file ảnh png/jpg
+        });
+
+      if (storageError) {
+        console.error("Lỗi Storage Supabase:", storageError.message);
+      } else if (storageData) {
+        // 2. Lấy link URL công khai của ảnh vừa tải lên thành công
+        const { data: publicUrlData } = supabase.storage
+          .from("bakery-images")
+          .getPublicUrl(uniqueFileName);
+
+        link_hinh_anh = publicUrlData.publicUrl;
+      }
+    } catch (err) {
+      console.error("Lỗi trong quá trình xử lý file ảnh:", err);
+    }
+  }
+  // -------------------------------------------------------------
+
+  // Chèn dữ liệu chữ kèm link ảnh xịn vào bảng
+  const { error } = await supabase.from("bai_hoc").insert([
+    {
+      tieu_de,
+      mo_ta,
+      noi_dung,
+      hinh_anh: link_hinh_anh, // Đảm bảo cột lưu ảnh trong bảng của bạn tên là "hinh_anh"
+    },
+  ]);
 
   if (error) {
     console.error(`Lỗi Database: ${error.message}`);
-    return; // Trả về void
+    return;
   }
 
   revalidatePath("/");
