@@ -183,7 +183,7 @@ export default async function HomePage() {
         {/* Khu vực danh sách sản phẩm */}
         <div className="border-b border-zinc-200 pb-3 mb-8 flex justify-between items-end">
           <h2 className="text-xl font-extrabold text-zinc-900 tracking-tight uppercase">
-            Khoá học{" "}
+            Công thức{" "}
             <span className="text-amber-500 normal-case font-bold">
               nổi bật
             </span>
