@@ -90,7 +90,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]"></div>
         <div className="max-w-3xl mx-auto relative z-10">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl uppercase">
-            Khoá Học Làm Bánh Chuẩn Vị
+            Chia Sẻ Công Thức Làm Bánh Chuẩn Vị
           </h1>
           <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed normal-case">
             Bí kíp làm bánh nở cao, mặt mịn bóng, ruột tơi xốp tan ngay trong
@@ -106,7 +106,7 @@ export default async function HomePage() {
         {isLoggedIn ? (
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-zinc-200/80 shadow-sm mb-16 max-w-3xl mx-auto">
             <h2 className="text-lg font-bold text-zinc-900 mb-1 flex items-center gap-2">
-              ✨ Đóng góp công thức bánh của bạn
+              ✨ Chia sẻ công thức bánh của bạn
             </h2>
             <p className="text-xs text-zinc-400 mb-6">
               Hệ thống sử dụng Server Actions cập nhật dữ liệu thời gian thực.
